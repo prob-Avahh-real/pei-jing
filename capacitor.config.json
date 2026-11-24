@@ -1,0 +1,20 @@
+{
+  "appId": "com.skat.peijing",
+  "appName": "配镜",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic"
+  },
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#eef4fb"
+    }
+  }
+}

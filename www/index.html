@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#eef4fb" />
+  <title>配镜 · 在家验光</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #eef4fb;
+      --bg-deep: #d8e6f5;
+      --ink: #0f1c2e;
+      --ink-soft: #4a627a;
+      --accent: #1a6fd4;
+      --accent-deep: #0d4f9e;
+      --ok: #1a8f6e;
+      --warn: #c47a00;
+      --red-test: #8b1a1a;
+      --green-test: #1a5c1a;
+      --paper: rgba(255, 255, 255, 0.88);
+      --line: rgba(15, 28, 46, 0.08);
+      --shadow: 0 14px 32px rgba(15, 28, 46, 0.08);
+      --radius: 20px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --font-ui: "Noto Sans SC", "DM Sans", system-ui, sans-serif;
+      --font-display: "DM Sans", "Noto Sans SC", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      font-family: var(--font-ui);
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background:
+        radial-gradient(100% 60% at 0% -10%, rgba(26, 111, 212, 0.12), transparent 55%),
+        radial-gradient(80% 50% at 100% 0%, rgba(26, 143, 110, 0.08), transparent 50%),
+        linear-gradient(180deg, #f4f8fd 0%, var(--bg) 50%, var(--bg-deep) 100%);
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      padding: calc(14px + var(--safe-top)) 18px calc(24px + var(--safe-bottom));
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .brand {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 9vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--accent-deep);
+    }
+
+    .brand small {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--ink-soft);
+      letter-spacing: 0.06em;
+    }
+
+    .wear-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+
+    .wear-btn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .screen { display: none; animation: fade 0.35s ease; }
+    .screen.active { display: block; }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .disclaimer {
+      font-size: 0.78rem;
+      line-height: 1.55;
+      color: var(--ink-soft);
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(196, 122, 0, 0.08);
+      border: 1px solid rgba(196, 122, 0, 0.15);
+      margin-bottom: 14px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .pill.ok { background: rgba(26, 143, 110, 0.12); color: var(--ok); }
+    .pill.warn { background: rgba(196, 122, 0, 0.12); color: var(--warn); }
+
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+    .btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.12s, opacity 0.12s;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-secondary { background: rgba(15, 28, 46, 0.06); color: var(--ink); }
+    .btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--ink-soft); flex: 0; min-width: auto; padding: 10px 14px; }
+
+    .progress-wrap {
+      height: 4px;
+      background: rgba(15, 28, 46, 0.06);
+      border-radius: 4px;
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--accent), var(--ok));
+      transition: width 0.4s ease;
+    }
+
+    .step-label {
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      margin-bottom: 12px;
+    }
+
+    .landolt-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      margin: 16px 0;
+      color: var(--ink);
+    }
+
+    .gap-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .gap-btn {
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+
+    .gap-btn:active { background: rgba(26, 111, 212, 0.1); }
+
+    .meta { font-size: 0.82rem; color: var(--ink-soft); text-align: center; }
+
+    .clock-dial {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: 20px auto;
+      border-radius: 50%;
+      border: 1px dashed var(--line);
+    }
+
+    .clock-line {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 90px;
+      height: 3px;
+      margin: -1.5px 0 0 -45px;
+      transform-origin: center center;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .clock-line span {
+      display: block;
+      width: 100%;
+      height: 3px;
+      background: var(--ink);
+      border-radius: 2px;
+      transform-origin: center center;
+    }
+
+    .clock-line:hover span { background: var(--accent); height: 4px; }
+
+    .compare-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .compare-panel {
+      padding: 20px 12px;
+      border-radius: 16px;
+      border: 2px solid var(--line);
+      text-align: center;
+      cursor: pointer;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .compare-panel.focused { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26, 111, 212, 0.2); }
+
+    .compare-panel .sample {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .duo-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .duo-panel {
+      padding: 24px 12px;
+      border-radius: 16px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #fff;
+    }
+
+    .duo-panel.red { background: var(--red-test); }
+    .duo-panel.green { background: var(--green-test); }
+
+    .card-preview {
+      height: 54px;
+      margin: 16px auto;
+      background: linear-gradient(135deg, #c9a227, #e8c547);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #3d2e00;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+    }
+
+    input[type="range"] { width: 100%; margin: 10px 0; }
+
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      font-family: inherit;
+      font-size: 1rem;
+      margin-top: 8px;
+    }
+
+    .rx-output {
+      font-family: ui-monospace, "IBM Plex Mono", monospace;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      background: rgba(15, 28, 46, 0.04);
+      padding: 16px;
+      border-radius: 14px;
+      margin: 12px 0;
+    }
+
+    .hist-item {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      padding: 12px 0;
+      border: none;
+      border-bottom: 1px solid var(--line);
+      background: none;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .hist-item .date { color: var(--ink-soft); font-size: 0.82rem; }
+    .hist-item .rx { font-weight: 600; font-size: 0.9rem; }
+
+    .muted { color: var(--ink-soft); font-size: 0.85rem; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(24px + var(--safe-bottom));
+      transform: translateX(-50%) translateY(80px);
+      background: var(--ink);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    label.field {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      margin-top: 12px;
+    }
+
+    @media (max-width: 280px), (max-height: 300px) {
+      .brand { font-size: 1.4rem; }
+      .card { padding: 14px 12px; }
+      .btn { padding: 10px 12px; font-size: 0.82rem; }
+      .landolt-box { min-height: 100px; }
+      .clock-dial { width: 160px; height: 160px; }
+      .clock-line { width: 60px; margin-left: -30px; }
+      .gap-btn { padding: 10px; font-size: 1.1rem; }
+      .compare-panel .sample { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        配镜
+        <small>在家自测验光</small>
+      </div>
+      <button type="button" class="wear-btn" id="wearBtn" aria-label="穿戴输入">⌚</button>
+    </header>
+
+    <!-- Home -->
+    <section class="screen active" data-screen="home">
+      <p class="disclaimer">⚠️ 本应用提供在家视力筛查与配镜参考，不能替代执业验光师的专业检查。结果受屏幕、光线与配合度影响。</p>
+      <div class="card">
+        <p id="calStatus" class="pill warn">未校准</p>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="btnStart">开始验光</button>
+          <button type="button" class="btn btn-secondary" id="btnCalibrate">屏幕校准</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:1rem;margin-bottom:10px;">历史记录</h3>
+        <div id="historyList"></div>
+      </div>
+    </section>
+
+    <!-- Calibrate -->
+    <section class="screen" data-screen="calibrate">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <p class="step-label" id="progressLabel">校准</p>
+      <div class="card">
+        <h2 style="font-size:1.1rem;margin-bottom:8px;">屏幕距离校准</h2>
+        <p class="muted">将银行卡/信用卡贴屏，拖动滑块使黄条宽度与实际卡片一致（85.6 mm）。</p>
+        <div class="card-preview" id="cardPreview">85.6 mm</div>
+        <input type="range" id="cardSlider" min="180" max="420" value="280" />
+        <p class="meta">屏幕宽度 <span id="cardPxLabel">280 px</span></p>
+        <label class="field">验光距离（cm，建议 250 = 2.5 m 等效）
+          <input type="number" id="distanceInput" value="250" min="100" max="600" step="10" />
+        </label>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="btnFinishCal">完成校准</button>
+          <button type="button" class="btn btn-ghost" data-nav="home">返回</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Acuity -->
+    <section class="screen" data-screen="acuity">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <p class="step-label" id="progressLabel">视力</p>
+      <div class="card">
+        <h2 id="acuityEye" style="font-size:1rem;">右眼 OD</h2>
+        <p class="muted" id="acuityHint">辨认 C 字缺口方向</p>
+        <div class="landolt-box" id="landoltHost"></div>
+        <div class="gap-grid">
+          <button type="button" class="gap-btn" data-gap="270" title="上">↑</button>
+          <button type="button" class="gap-btn" data-gap="90" title="下">↓</button>
+          <button type="button" class="gap-btn" data-gap="0" title="右">→</button>
+          <button type="button" class="gap-btn" data-gap="180" title="左">←</button>
+        </div>
+        <p class="meta" id="acuityMeta" style="margin-top:12px;"></p>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="acuityNext" disabled>下一眼 / 继续</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Astigmatism -->
+    <section class="screen" data-screen="astigmatism">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <p class="step-label" id="progressLabel">散光</p>
+      <div class="card">
+        <h2 id="astEye">右眼 OD</h2>
+        <p class="muted" id="astPhase">哪条线最清晰？</p>
+        <div class="clock-dial" id="clockDial"></div>
+      </div>
+    </section>
+
+    <!-- Subjective -->
+    <section class="screen" data-screen="subjective">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <p class="step-label" id="progressLabel">屈光</p>
+      <div class="card">
+        <h2 id="subjEye">右眼 OD</h2>
+        <p class="muted" id="subjPrompt">哪边更清晰？</p>
+        <div class="compare-row" id="subjCompare">
+          <button type="button" class="compare-panel" id="subjA" data-choice="0">
+            <span class="sample">配镜验光</span>
+            <span id="subjALabel">A</span>
+          </button>
+          <button type="button" class="compare-panel" id="subjB" data-choice="1">
+            <span class="sample">配镜验光</span>
+            <span id="subjBLabel">B</span>
+          </button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="subjNext" disabled>继续</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Duochrome -->
+    <section class="screen" data-screen="duochrome">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <p class="step-label" id="progressLabel">红绿</p>
+      <div class="card">
+        <h2 id="duoEye">右眼 OD</h2>
+        <p class="muted" id="duoHint">红底与绿底哪边字母更清晰？</p>
+        <div class="duo-row">
+          <button type="button" class="duo-panel red" id="duoRed" data-choice="0">红底<br/>ABC</button>
+          <button type="button" class="duo-panel green" id="duoGreen" data-choice="1">绿底<br/>ABC</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="duoNext" disabled>继续</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Near -->
+    <section class="screen" data-screen="near">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <p class="step-label" id="progressLabel">近视力</p>
+      <div class="card">
+        <h2 style="font-size:1rem;">近用视力 · 40 cm</h2>
+        <p class="muted">将手机置于阅读距离，辨认 C 字缺口（用于老花/ADD 估算）</p>
+        <div class="landolt-box" id="nearHost"></div>
+        <div class="gap-grid">
+          <button type="button" class="gap-btn" data-near-gap="270">↑</button>
+          <button type="button" class="gap-btn" data-near-gap="90">↓</button>
+          <button type="button" class="gap-btn" data-near-gap="0">→</button>
+          <button type="button" class="gap-btn" data-near-gap="180">←</button>
+        </div>
+        <p class="meta" id="nearMeta"></p>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="nearNext" disabled>继续测瞳距</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PD -->
+    <section class="screen" data-screen="pd">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <p class="step-label" id="progressLabel">瞳距</p>
+      <div class="card">
+        <h2 style="font-size:1rem;">瞳距 PD</h2>
+        <pre class="rx-output" id="pdGuide" style="font-family:inherit;font-size:0.82rem;"></pre>
+        <label class="field">输入实测 PD（mm）
+          <input type="number" id="pdInput" placeholder="例如 63" min="50" max="80" step="0.5" />
+        </label>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="btnSavePd">生成处方</button>
+          <button type="button" class="btn btn-secondary" id="btnSkipPd">跳过</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Result -->
+    <section class="screen" data-screen="result">
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:100%"></div></div>
+      <p class="step-label">处方</p>
+      <div class="card">
+        <h2 style="font-size:1rem;margin-bottom:8px;">配镜处方（参考）</h2>
+        <div class="rx-output" id="rxOutput"></div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="btnCopyRx">复制处方</button>
+          <button type="button" class="btn btn-secondary" id="btnHome">完成</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="js/app.js"></script>
+  <script>
+    document.getElementById('btnSkipPd')?.addEventListener('click', () => {
+      document.getElementById('btnSavePd')?.click();
+    });
+  </script>
+</body>
+</html>
